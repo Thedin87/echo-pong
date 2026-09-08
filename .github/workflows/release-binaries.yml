@@ -43,6 +43,17 @@ jobs:
           CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags="-s -w" -o "dist/${binary}" .
           sha256sum "dist/${binary}" > "dist/${binary}.sha256"
 
+      - name: Scan binary for high and critical vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: dist/
+          format: table
+          exit-code: '1'
+          ignore-unfixed: false
+          vuln-type: library
+          severity: CRITICAL,HIGH
+
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
