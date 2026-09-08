@@ -25,15 +25,21 @@ these manifests.
 
 ### Configure the image
 
-The default image tag is `v1.0.0`. Set it to a published release before deployment:
+Before deploying, select the newest published `vX.Y.Z` Git tag and inject it into
+`k8s/kustomization.yaml`:
 
 ```bash
 cd echo-pong
-sed -i.bak 's/newTag: v1.0.0/newTag: v1.2.3/' k8s/kustomization.yaml
+git fetch --tags origin
+VERSION=$(git tag --list 'v*' --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+test -n "$VERSION" || { echo "No vX.Y.Z Git tag found" >&2; exit 1; }
+sed -i.bak -E "s/(newTag: ).*/\1$VERSION/" k8s/kustomization.yaml
 rm -f k8s/kustomization.yaml.bak
+echo "Deploying image tag: $VERSION"
 ```
 
-On Windows, edit `newTag` in `k8s/kustomization.yaml` directly.
+This makes the image tag in Kustomize match the newest version tag in Git. Confirm the
+selected image exists in GHCR before applying the manifests.
 
 If the GHCR package is private, create an image-pull Secret and add `imagePullSecrets` to
 the Deployment. Do not commit a GitHub token to this repository.
