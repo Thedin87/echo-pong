@@ -8,6 +8,8 @@ metadata:
 spec:
   replicas: 2
   revisionHistoryLimit: 3
+  minReadySeconds: 10
+  progressDeadlineSeconds: 600
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -22,6 +24,7 @@ spec:
         app.kubernetes.io/name: ping-pong
         app.kubernetes.io/component: server
     spec:
+      terminationGracePeriodSeconds: 30
       imagePullSecrets:
         - name: ghcr-secret
       automountServiceAccountToken: false
@@ -50,6 +53,13 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: ping-pong
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: ping-pong
       containers:
         - name: ping-pong
           image: ghcr.io/thedin87/echo-pong
