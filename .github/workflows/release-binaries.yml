@@ -57,6 +57,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
       - name: Validate release tag
         env:
           RELEASE_TAG: ${{ github.ref_name }}

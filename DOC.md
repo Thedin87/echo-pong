@@ -25,21 +25,33 @@ these manifests.
 
 ### Configure the image
 
-Before deploying, select the newest published `vX.Y.Z` Git tag and inject it into
-`k8s/kustomization.yaml`:
+Before deploying, select the newest published `vX.Y.Z` Git tag and inject it into the
+rendered Kubernetes YAML without changing `k8s/kustomization.yaml`:
 
 ```bash
 cd echo-pong
 git fetch --tags origin
 VERSION=$(git tag --list 'v*' --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
 test -n "$VERSION" || { echo "No vX.Y.Z Git tag found" >&2; exit 1; }
-sed -i.bak -E "s/(newTag: ).*/\1$VERSION/" k8s/kustomization.yaml
-rm -f k8s/kustomization.yaml.bak
 echo "Deploying image tag: $VERSION"
 ```
 
-This makes the image tag in Kustomize match the newest version tag in Git. Confirm the
-selected image exists in GHCR before applying the manifests.
+Confirm the selected image exists in GHCR, then render, replace, print, and apply the YAML:
+
+```bash
+kubectl kustomize k8s/ \
+	| sed -E "s#(image: ghcr.io/thedin87/echo-pong:).*#\1$VERSION#" \
+	| tee /tmp/ping-pong-rendered.yaml
+
+kubectl apply -f /tmp/ping-pong-rendered.yaml
+kubectl -n ping-pong rollout status deployment/ping-pong
+```
+
+The rendered YAML printed by `tee` contains the selected versioned image, while
+`k8s/kustomization.yaml` remains unchanged. This is a command-line deployment override;
+commit the version to Kustomize separately when you want the release configuration recorded
+in Git.
+This approach is used because the exact deployment environment and its release versioning requirements are not known. It is a practical workaround for the broader problem of selecting and injecting the correct image version at deployment time; a larger environment could replace it with a GitOps or templating solution.
 
 If the GHCR package is private, create an image-pull Secret and add `imagePullSecrets` to
 the Deployment. Do not commit a GitHub token to this repository.
