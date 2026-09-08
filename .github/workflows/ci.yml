@@ -32,8 +32,13 @@ jobs:
       - name: Vet
         run: go vet ./...
 
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
-      - name: Check Go vulnerabilities
-        run: govulncheck ./...
+      - name: Scan dependencies for high and critical vulnerabilities
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          exit-code: '1'
+          ignore-unfixed: false
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
