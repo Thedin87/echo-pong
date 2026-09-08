@@ -2,8 +2,8 @@ name: Release container image
 
 on:
   push:
-    tags:
-      - 'v*'
+    # tags:
+    #   - 'v*'
     branches:
       - '*_rc'
 
